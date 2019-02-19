@@ -4,6 +4,7 @@
 .vscode/
 
 src/.deps/
+src/blazersh
 Makefile
 
 /ar-lib
@@ -15,6 +16,7 @@ Makefile
 autom4te.cache
 /autoscan.log
 /autoscan-*.log
+/config.h
 /config.guess
 /config.log
 /config.status
