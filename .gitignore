@@ -3,7 +3,9 @@
 /bin/*
 .vscode/
 
-Makefile.in
+src/.deps/
+Makefile
+
 /ar-lib
 /mdate-sh
 /py-compile
@@ -13,18 +15,12 @@ Makefile.in
 autom4te.cache
 /autoscan.log
 /autoscan-*.log
-/aclocal.m4
-/compile
 /config.guess
 /config.h.in
 /config.log
 /config.status
 /config.sub
-/configure
 /configure.scan
-/depcomp
-/install-sh
-/missing
 /stamp-h1
 
 /ltmain.sh
