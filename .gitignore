@@ -17,7 +17,6 @@ Makefile
 /ar-lib
 /mdate-sh
 /py-compile
-/test-driver
 /ylwrap
 
 autom4te.cache
@@ -25,10 +24,8 @@ autom4te.cache
 /autoscan-*.log
 /config.h
 /config.h.in~
-/config.guess
 /config.log
 /config.status
-/config.sub
 /configure.scan
 /stamp-h1
 
