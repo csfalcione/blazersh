@@ -14,7 +14,6 @@ src/main
 tests/check_blazersh
 Makefile
 
-/ar-lib
 /mdate-sh
 /py-compile
 /ylwrap
