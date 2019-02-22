@@ -9,7 +9,7 @@
 
 START_TEST(test_strarray)
 {
-    struct strarray* arr = strarray_create(2);
+    strarray* arr = strarray_create(2);
 
 
     ck_assert_int_eq( strarray_len(arr), 0 );

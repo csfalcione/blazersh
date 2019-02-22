@@ -11,28 +11,28 @@ struct strarray {
     char** array;
 };
 
-struct strarray* strarray_create_default();
-struct strarray* strarray_create(int initialCapacity);
+strarray* strarray_create_default();
+strarray* strarray_create(int initialCapacity);
 
-void strarray_add(struct strarray* arr, char* string);
+void strarray_add(strarray* arr, char* string);
 
-char* strarray_get(struct strarray* arr, int index);
+char* strarray_get(strarray* arr, int index);
 
-int strarray_len(struct strarray* arr);
-int strarray_capacity(struct strarray* arr);
+int strarray_len(strarray* arr);
+int strarray_capacity(strarray* arr);
 
-void strarray_free(struct strarray* arr);
+void strarray_free(strarray* arr);
 
-void strarray_upsize(struct strarray* arr, int newCapacity);
-void free_strings(struct strarray* arr);
+void strarray_upsize(strarray* arr, int newCapacity);
+void free_strings(strarray* arr);
 
 
-struct strarray* strarray_create_default() {
+strarray* strarray_create_default() {
     return strarray_create(DEFAULT_INITIAL_CAPACITY);
 }
 
-struct strarray* strarray_create(int initialCapacity) {
-    struct strarray* new = malloc( sizeof(struct strarray) );
+strarray* strarray_create(int initialCapacity) {
+    strarray* new = malloc( sizeof(strarray) );
     new->length = 0;
     new->array = malloc( sizeof(char*) * initialCapacity );
     new->capacity = initialCapacity;
@@ -40,7 +40,7 @@ struct strarray* strarray_create(int initialCapacity) {
 }
 
 
-void strarray_add(struct strarray* arr, char* string) {
+void strarray_add(strarray* arr, char* string) {
     if (arr->length == arr->capacity) {
         strarray_upsize(arr, arr->capacity * 1.5 + 1);
     }
@@ -51,7 +51,7 @@ void strarray_add(struct strarray* arr, char* string) {
     arr->length++;
 }
 
-void strarray_upsize(struct strarray* arr, int newCapacity) {
+void strarray_upsize(strarray* arr, int newCapacity) {
     int length = arr->length;
     char** oldArray = arr->array;
     char** newArray = malloc( sizeof(char*) * newCapacity );
@@ -65,25 +65,25 @@ void strarray_upsize(struct strarray* arr, int newCapacity) {
     free(oldArray);
 }
 
-char* strarray_get(struct strarray* arr, int index) {
+char* strarray_get(strarray* arr, int index) {
     return arr->array[index];
 }
 
-int strarray_len(struct strarray* arr) {
+int strarray_len(strarray* arr) {
     return arr->length;
 }
 
-int strarray_capacity(struct strarray* arr) {
+int strarray_capacity(strarray* arr) {
     return arr->capacity;
 }
 
-void strarray_free(struct strarray* arr) {
+void strarray_free(strarray* arr) {
     free_strings(arr);
     free(arr->array);
     free(arr);
 }
 
-void free_strings(struct strarray* arr) {
+void free_strings(strarray* arr) {
     char** array = arr->array;
     int length = arr->length;
 
