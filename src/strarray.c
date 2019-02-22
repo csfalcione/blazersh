@@ -11,9 +11,25 @@ struct strarray {
     char** array;
 };
 
+struct strarray* strarray_create_default();
+struct strarray* strarray_create(int initialCapacity);
+
+void strarray_add(struct strarray* arr, char* string);
+
+char* strarray_get(struct strarray* arr, int index);
+
+int strarray_len(struct strarray* arr);
+int strarray_capacity(struct strarray* arr);
+
+void strarray_free(struct strarray* arr);
+
 void strarray_upsize(struct strarray* arr, int newCapacity);
 void free_strings(struct strarray* arr);
 
+
+struct strarray* strarray_create_default() {
+    return strarray_create(DEFAULT_INITIAL_CAPACITY);
+}
 
 struct strarray* strarray_create(int initialCapacity) {
     struct strarray* new = malloc( sizeof(struct strarray) );
@@ -23,9 +39,6 @@ struct strarray* strarray_create(int initialCapacity) {
     return new;
 }
 
-struct strarray* strarray_create_default() {
-    return strarray_create(DEFAULT_INITIAL_CAPACITY);
-}
 
 void strarray_add(struct strarray* arr, char* string) {
     if (arr->length == arr->capacity) {
