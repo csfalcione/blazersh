@@ -13,10 +13,12 @@ struct strarray {
 
 strarray* strarray_create_default();
 strarray* strarray_create(int initialCapacity);
+strarray* strarray_from(char** array, int length);
 
 void strarray_add(strarray* arr, char* string);
 
 char* strarray_get(strarray* arr, int index);
+void strarray_set(strarray* arr, int index, char* value);
 
 int strarray_len(strarray* arr);
 int strarray_capacity(strarray* arr);
@@ -39,13 +41,21 @@ strarray* strarray_create(int initialCapacity) {
     return new;
 }
 
+strarray* strarray_from(char** array, int length) {
+    strarray* result = strarray_create(length);
+    for(int i = 0; i < length; i++) {
+        strarray_add(result, array[i]);
+    }
+    return result;
+}
+
 
 void strarray_add(strarray* arr, char* string) {
     if (arr->length == arr->capacity) {
         strarray_upsize(arr, arr->capacity * 1.5 + 1);
     }
     int strLen = strlen(string);
-    char* copy = malloc( sizeof(char*) * (strLen + 1) );
+    char* copy = malloc( sizeof(char) * (strLen + 1) );
     strcpy(copy, string);
     arr->array[arr->length] = copy;
     arr->length++;
@@ -67,6 +77,14 @@ void strarray_upsize(strarray* arr, int newCapacity) {
 
 char* strarray_get(strarray* arr, int index) {
     return arr->array[index];
+}
+
+void strarray_set(strarray* arr, int index, char* value) {
+    int strLen = strlen(value);
+    char* copy = malloc( sizeof(char) * (strLen + 1) );
+    strcpy(copy, value);
+    free(arr->array[index]);
+    arr->array[index] = copy;
 }
 
 int strarray_len(strarray* arr) {

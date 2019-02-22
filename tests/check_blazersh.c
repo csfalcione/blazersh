@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <check.h>
+
 #include "../src/blazersh.h"
 
 START_TEST(test_blazersh_parse)
