@@ -6,6 +6,9 @@
 #include <dirent.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 #include "blazersh.h"
 #include "parser.h"
@@ -31,6 +34,7 @@ void print_prompt();
 char* get_input();
 void print_strarray(strarray* arr);
 char* current_directory();
+const char* get_error_message(int err);
 
 
 int main_loop() {
@@ -122,32 +126,7 @@ void handle_cd(strarray* tokens) {
     }
     char* msg = change_dir( strarray_get(tokens, 1) );
     if (msg == NULL) {
-        switch (errno) {
-            case EACCES:
-                puts("permission denied");
-                break;
-            case EINVAL:
-                puts("invalid argument");
-                break;
-            case EIO:
-                puts("I/O error");
-                break;
-            case ENAMETOOLONG:
-                puts("filename too long");
-                break;
-            case ENOENT:
-                puts("no such file or directory");
-                break;
-            case ENOTDIR:
-                puts("not a directory");
-                break;
-            case ELOOP:
-                puts("too many symbolic links encountered when resolving path");
-                break;
-            default:
-                puts("unspecified error");
-                break;
-        }
+        puts(get_error_message(errno));
         return;
     }
     puts(msg);
@@ -157,7 +136,21 @@ void handle_cd(strarray* tokens) {
 
 
 void execute(strarray* tokens) {
-    // TODO
+    char** raw_array = strarray_unwrap(tokens);
+    pid_t pid = fork();
+    if (pid == 0) {
+        int result = execvp(raw_array[0], &raw_array[0]);
+        if (result == -1) {
+            puts(get_error_message(errno));
+        }
+        exit(errno);
+    }
+    else {
+        int status;
+        waitpid(pid, &status, 0);
+        
+    }
+
 }
 
 
@@ -263,4 +256,35 @@ char* get_input() {
     length++;
     result[length] = '\0';
     return realloc(result, sizeof(char) * length);
+}
+
+const char* get_error_message(int error) {
+    switch (errno) {
+        case EACCES:
+            return "access denied";
+        case EIO:
+            return "I/O error";
+        case EISDIR:
+            return "filename is a directory";
+        case EINVAL:
+            return "invalid argument";
+        case ELIBBAD:
+            return "unrecognized format";
+        case ELOOP:
+            return "too many symbolic links encountered";
+        case EMFILE:
+            return "maximum number of files open exceeded";
+        case ENAMETOOLONG:
+            return "filename too long";
+        case ENOENT:
+            return "file not found";
+        case ENOEXEC:
+            return "unrecognized format";
+        case ENOTDIR:
+            return "directory not found";
+        case ENOMEM:
+            return "insufficient kernel memory";
+        default:
+            return "unspecified error";
+    }
 }
