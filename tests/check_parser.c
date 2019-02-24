@@ -4,7 +4,7 @@
 #include <check.h>
 
 #include "../src/strarray.h"
-#include "../src/blazersh.h"
+#include "../src/parser.h"
 
 void assert_strarray_eq(strarray* arr1, strarray* arr2) {
     int len1, len2;
