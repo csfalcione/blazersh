@@ -23,6 +23,7 @@ strarray* list();
 char* change_dir(char* directory);
 char* help();
 
+void handle_command();
 void handle_environment();
 void handle_get_variable(strarray* tokens);
 void handle_set_variable(strarray* tokens);
@@ -30,6 +31,7 @@ void handle_list();
 void handle_pwd();
 void handle_cd();
 
+void route_command();
 void print_prompt();
 char* get_input();
 void print_strarray(strarray* arr);
@@ -51,40 +53,69 @@ int main_loop() {
         else if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
             return 0;
         }
-        else if (strcmp( strarray_get(tokens, 0), "help" ) == 0) {
-            help();
-        }
-        else if (strcmp( strarray_get(tokens, 0), "environ" ) == 0) {
-            handle_environment();
-        }
-        else if (strcmp( strarray_get(tokens, 0), "get" ) == 0) {
-            handle_get_variable(tokens);
-        }
-        else if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
-            handle_set_variable(tokens);
-        }
-        else if (strcmp( strarray_get(tokens, 0), "pwd" ) == 0) {
-            handle_pwd();
-        }
-        else if (strcmp( strarray_get(tokens, 0), "list" ) == 0) {
-            handle_list();
-        }
-        else if (strcmp( strarray_get(tokens, 0), "ls" ) == 0) {
-            handle_list();
-        }
-        else if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
-            handle_cd(tokens);
-        } 
         else {
-            execute(tokens);
+            handle_command(tokens);
         }
         strarray_free(tokens);
     }
-
 }
 
 void print_prompt() {
     printf("\nblazersh>"); 
+}
+
+void handle_command(strarray* tokens) {
+
+
+    pid_t pid = fork();
+    if (pid == 0) { // child process
+        
+        route_command(tokens);
+        exit(errno);
+    }
+    else if (pid > 0) { // parent process
+        int status;
+        waitpid(pid, &status, 0);
+
+        if (!WIFEXITED(status)) {
+            puts("child process didn't exit normally");
+        }
+
+    }
+    else {
+        puts("fork error");
+    }
+}
+
+void route_command(strarray* tokens) {
+    char* first_arg = strarray_get(tokens, 0);
+    if (strcmp( first_arg , "help" ) == 0) {
+        help();
+    }
+    else if (strcmp( first_arg, "environ" ) == 0) {
+        handle_environment();
+    }
+    else if (strcmp( first_arg, "get" ) == 0) {
+        handle_get_variable(tokens);
+    }
+    else if (strcmp( first_arg, "set" ) == 0) {
+        handle_set_variable(tokens);
+    }
+    else if (strcmp( first_arg, "pwd" ) == 0) {
+        handle_pwd();
+    }
+    else if (strcmp( first_arg, "list" ) == 0) {
+        handle_list();
+    }
+    else if (strcmp( first_arg, "ls" ) == 0) {
+        handle_list();
+    }
+    else if (strcmp( first_arg, "cd" ) == 0) {
+        handle_cd(tokens);
+    } 
+    else {
+        execute(tokens);
+    }
 }
 
 void handle_environment() {
@@ -137,20 +168,10 @@ void handle_cd(strarray* tokens) {
 
 void execute(strarray* tokens) {
     char** raw_array = strarray_unwrap(tokens);
-    pid_t pid = fork();
-    if (pid == 0) {
-        int result = execvp(raw_array[0], &raw_array[0]);
-        if (result == -1) {
-            puts(get_error_message(errno));
-        }
-        exit(errno);
+    int result = execvp(raw_array[0], &raw_array[0]);
+    if (result == -1) {
+        puts(get_error_message(errno));
     }
-    else {
-        int status;
-        waitpid(pid, &status, 0);
-        
-    }
-
 }
 
 
