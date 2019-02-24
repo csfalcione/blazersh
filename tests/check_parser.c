@@ -15,46 +15,46 @@ void assert_strarray_eq(strarray* arr1, strarray* arr2) {
     }
 }
 
-void assert_parse_output(strarray* output, char** expected, int length) {
+void assert_tokenization(strarray* output, char** expected, int length) {
     assert_strarray_eq(output, strarray_from(expected, length));
 }
 
 START_TEST(test_parse)
 {
-    assert_parse_output(
-        parse_input("exit "),
+    assert_tokenization(
+        tokenize_input("exit "),
         (char* []) {"exit"}, 1
     );
-    assert_parse_output(
-        parse_input("\tls  -al "),
+    assert_tokenization(
+        tokenize_input("\tls  -al "),
         (char* []) {"ls", "-al"}, 2
     );
-    assert_parse_output(
-        parse_input("\t"),
+    assert_tokenization(
+        tokenize_input("\t"),
         (char* []) {}, 0
     );
-    assert_parse_output(
-        parse_input("cd \"My Documents\""),
+    assert_tokenization(
+        tokenize_input("cd \"My Documents\""),
         (char* []) {"cd", "My Documents"}, 2
     );
-    assert_parse_output(
-        parse_input("cp -u \"My Documents\" ~/doc_backup"),
+    assert_tokenization(
+        tokenize_input("cp -u \"My Documents\" ~/doc_backup"),
         (char* []) {"cp", "-u", "My Documents", "~/doc_backup"}, 4
     );
-    assert_parse_output(
-        parse_input("cp -u \"My Documents\" \\~/doc_backup"),
+    assert_tokenization(
+        tokenize_input("cp -u \"My Documents\" \\~/doc_backup"),
         (char* []) {"cp", "-u", "My Documents", "~/doc_backup"}, 4
     );
-    assert_parse_output(
-        parse_input("\"cd My Documents\""),
+    assert_tokenization(
+        tokenize_input("\"cd My Documents\""),
         (char* []) {"cd My Documents"}, 1
     );
-    assert_parse_output(
-        parse_input("cd \"My Documents"),
+    assert_tokenization(
+        tokenize_input("cd \"My Documents"),
         (char* []) {"cd", "My Documents"}, 2
     );
-    assert_parse_output(
-        parse_input("cd My\\ Documents"),
+    assert_tokenization(
+        tokenize_input("cd My\\ Documents"),
         (char* []) {"cd", "My Documents"}, 2
     );
 }

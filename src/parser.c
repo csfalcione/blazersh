@@ -14,7 +14,7 @@ typedef struct parse_state {
     int copy_capacity;
 } parse_state;
 
-strarray* parse_input(char* input);
+strarray* tokenize_input(char* input);
 
 parse_state emit_token(parse_state state, strarray* tokens);
 parse_state add_char(parse_state state, char c);
@@ -29,7 +29,7 @@ int is_whitespace(char c);
 int is_word(char c);
 
 
-strarray* parse_input(char* input) {
+strarray* tokenize_input(char* input) {
     strarray* tokens = strarray_create_default();
     parse_state state = {
         .state = Whitespace,

@@ -42,7 +42,7 @@ int main_loop() {
     for(;;) {
         print_prompt();
         char* input = get_input();
-        strarray* tokens = parse_input(input);
+        strarray* tokens = tokenize_input(input);
         free(input);
 
         if (strarray_len(tokens) == 0) {
