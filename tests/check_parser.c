@@ -41,6 +41,22 @@ START_TEST(test_parse)
         (char* []) {"cd", "My Documents"}, 2
     );
     assert_parse_output(
+        parse_input("cp -u \"My Documents\" ~/doc_backup"),
+        (char* []) {"cp", "-u", "My Documents", "~/doc_backup"}, 4
+    );
+    assert_parse_output(
+        parse_input("cp -u \"My Documents\" \\~/doc_backup"),
+        (char* []) {"cp", "-u", "My Documents", "~/doc_backup"}, 4
+    );
+    assert_parse_output(
+        parse_input("\"cd My Documents\""),
+        (char* []) {"cd My Documents"}, 1
+    );
+    assert_parse_output(
+        parse_input("cd \"My Documents"),
+        (char* []) {"cd", "My Documents"}, 2
+    );
+    assert_parse_output(
         parse_input("cd My\\ Documents"),
         (char* []) {"cd", "My Documents"}, 2
     );
