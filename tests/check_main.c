@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <check.h>
 
 #include "check_strarray.c"

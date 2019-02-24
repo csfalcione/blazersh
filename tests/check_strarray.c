@@ -1,9 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <check.h>
-#include "../src/strarray.h"
 
+#include <check.h>
+
+#include "../src/strarray.h"
 
 
 START_TEST(test_strarray)

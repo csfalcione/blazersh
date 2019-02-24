@@ -34,7 +34,7 @@ int main_loop() {
 }
 
 void print_prompt() {
-    printf("blazersh>"); 
+    printf("\nblazersh>"); 
 }
 
 char* get_input() {
