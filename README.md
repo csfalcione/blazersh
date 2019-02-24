@@ -5,15 +5,14 @@ This is the beginning of the `blazersh` package for UAB's CS433 Operating System
 
 ## Installation
 
+This project depends on the `check` library (installation instructions <a href="https://libcheck.github.io/check/web/install.html">here</a>).
+
 Build with
 - `./configure`
 - `make`
 
-Optionally test with
+Optionally run tests with
 - `make check`
 
-If you're crazy enough to install onto your system (you'll likely have to prefix with `sudo`)
-- `make install`
-
-Undo your mistake with
-- `make uninstall`
+Finally, execute with
+- `./src/blazersh`
