@@ -1,7 +1,6 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <stdint.h>
+// #include <stdint.h>
 
 #include "parser.h"
 #include "strarray.h"
@@ -16,18 +15,22 @@ typedef struct parse_state {
 } parse_state;
 
 strarray* parse_input(char* input);
-parse_state transition(parse_state state, char* input, strarray* result);
-parse_state transition_whitespace(parse_state state, char* input, strarray* result);
-parse_state transition_consuming(parse_state state, char* input, strarray* result);
-parse_state transition_escape(parse_state state, char* input, strarray* result);
-parse_state transition_quote(parse_state state, char* input, strarray* result);
+
+parse_state emit_token(parse_state state, strarray* tokens);
 parse_state add_char(parse_state state, char c);
+
+parse_state transition(parse_state state, char* input, strarray* tokens);
+parse_state transition_whitespace(parse_state state, char* input, strarray* tokens);
+parse_state transition_consuming(parse_state state, char* input, strarray* tokens);
+parse_state transition_escape(parse_state state, char* input, strarray* tokens);
+parse_state transition_quote(parse_state state, char* input, strarray* tokens);
+
 int is_whitespace(char c);
 int is_word(char c);
 
 
 strarray* parse_input(char* input) {
-    strarray* result = strarray_create_default();
+    strarray* tokens = strarray_create_default();
     parse_state state = {
         .state = Whitespace,
         .cursor = 0,
@@ -38,37 +41,56 @@ strarray* parse_input(char* input) {
     int length = strlen(input);
 
     while (state.cursor < length) {
-        state = transition(state, input, result);
+        state = transition(state, input, tokens);
     }
     if (state.copy_length > 0) {
-        state = add_char(state, '\0');
-        strarray_add(result, state.working_copy);
-        state.copy_length = 0;
-        state.working_copy[0] = '\0';
+        state = emit_token(state, tokens);
     }
 
     free(state.working_copy);
-    return result;
+    return tokens;
 }
 
-parse_state transition(parse_state state, char* input, strarray* result) {
+
+parse_state emit_token(parse_state state, strarray* tokens) {
+    state = add_char(state, '\0');
+    strarray_add(tokens, state.working_copy);
+    state.copy_length = 0;
+    state.working_copy[0] = '\0';
+    return state;
+}
+
+parse_state add_char(parse_state state, char c) {
+    state.working_copy[state.copy_length] = c;
+    state.copy_length++;
+
+    if (state.copy_length < state.copy_capacity) return state;
+
+    int newCapacity = state.copy_capacity * 1.5 + 1;
+    state.working_copy = realloc(state.working_copy, sizeof(char) * newCapacity);
+    state.copy_capacity = newCapacity;
+    return state;
+}
+
+
+parse_state transition(parse_state state, char* input, strarray* tokens) {
     switch (state.state) {
 
         case Whitespace:
-            return transition_whitespace(state, input, result);
+            return transition_whitespace(state, input, tokens);
     
         case Consuming:
-            return transition_consuming(state, input, result);
+            return transition_consuming(state, input, tokens);
         
         case Escape:
-            return transition_escape(state, input, result);
+            return transition_escape(state, input, tokens);
 
         case Quote:
-            return transition_quote(state, input, result);
+            return transition_quote(state, input, tokens);
     }
 }
 
-parse_state transition_whitespace(parse_state state, char* input, strarray* result) {
+parse_state transition_whitespace(parse_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
     parse_state next = state;
     next.cursor += 1;
@@ -87,7 +109,7 @@ parse_state transition_whitespace(parse_state state, char* input, strarray* resu
     return next;
 }
 
-parse_state transition_consuming(parse_state state, char* input, strarray* result) {
+parse_state transition_consuming(parse_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
     parse_state next = state;
     next.cursor += 1;
@@ -96,10 +118,7 @@ parse_state transition_consuming(parse_state state, char* input, strarray* resul
         next = add_char(next, c);
     }
     if (is_whitespace(c)) {
-        next = add_char(next, '\0');
-        strarray_add(result, next.working_copy);
-        next.copy_length = 0;
-        next.working_copy[0] = '\0';
+        next = emit_token(next, tokens);
         next.state = Whitespace;
     }
     if (c == '\\') {
@@ -110,7 +129,7 @@ parse_state transition_consuming(parse_state state, char* input, strarray* resul
 
 }
 
-parse_state transition_escape(parse_state state, char* input, strarray* result) {
+parse_state transition_escape(parse_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
     parse_state next = state;
 
@@ -135,7 +154,7 @@ parse_state transition_escape(parse_state state, char* input, strarray* result) 
     return next;
 }
 
-parse_state transition_quote(parse_state state, char* input, strarray* result) {
+parse_state transition_quote(parse_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
     parse_state next = state;
 
@@ -154,24 +173,10 @@ parse_state transition_quote(parse_state state, char* input, strarray* result) {
     return next;
 }
 
-
-
 int is_whitespace(char c) {
     return c == ' ' || c == '\t';
 }
 
 int is_word(char c) {
     return !is_whitespace(c) && c != '\\' && c != '\n' && c != '"';
-}
-
-parse_state add_char(parse_state state, char c) {
-    state.working_copy[state.copy_length] = c;
-    state.copy_length++;
-
-    if (state.copy_length < state.copy_capacity) return state;
-
-    int newCapacity = state.copy_capacity * 1.5 + 1;
-    state.working_copy = realloc(state.working_copy, sizeof(char) * newCapacity);
-    state.copy_capacity = newCapacity;
-    return state;
 }
