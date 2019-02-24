@@ -26,6 +26,8 @@ int strarray_capacity(strarray* arr);
 
 void strarray_free(strarray* arr);
 
+char** strarray_unwrap(strarray* arr);
+
 void strarray_upsize(strarray* arr, int newCapacity);
 void free_strings(strarray* arr);
 
@@ -52,13 +54,14 @@ strarray* strarray_from(char** array, int length) {
 
 
 void strarray_add(strarray* arr, char* string) {
-    if (arr->length == arr->capacity) {
+    if (arr->length == arr->capacity - 1) {
         strarray_upsize(arr, arr->capacity * 1.5 + 1);
     }
     int strLen = strlen(string);
     char* copy = malloc( sizeof(char) * (strLen + 1) );
     strcpy(copy, string);
     arr->array[arr->length] = copy;
+    arr->array[arr->length + 1] = NULL;
     arr->length++;
 }
 
@@ -109,4 +112,8 @@ void free_strings(strarray* arr) {
     for (int i = 0; i < length; i++) {
         free( array[i] );
     }
+}
+
+char** strarray_unwrap(strarray* arr) {
+    return arr->array;
 }

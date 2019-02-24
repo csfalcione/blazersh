@@ -14,5 +14,21 @@ Build with
 Optionally run tests with
 - `make check`
 
-Finally, execute with
+
+## Howto
+execute with
 - `./src/blazersh`
+
+The `help` command reads as follows:
+```
+== Commands ==
+environ: list environment variables
+get <var>: show value for 'var' environment variable
+set <var> <val>: set 'var' environment variable to 'val'
+list: list files and subdirectories of the current directory
+ls: alias of list
+pwd: prints the present working directory
+cd <dir>: change the present working directory to 'dir'
+help: Show this text
+If you have any problems, please report them to noreply@uab.edu
+```
