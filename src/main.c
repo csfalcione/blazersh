@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <config.h>
 
 #include "blazersh.h"
 #include "strarray.h"
@@ -23,16 +22,16 @@ int main_loop() {
     for(;;) {
         print_prompt();
         char* input = get_input();
-        // struct strarray* tokens = parse_input(input);
+        strarray* tokens = parse_input(input);
 
-        // if (strarray_len(tokens) == 0) {
-        //     printf("\n");
-        //     continue;
-        // }
+        if (strarray_len(tokens) == 0) {
+            printf("\n");
+            continue;
+        }
 
-        // if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
-        //     return 0;
-        // }
+        if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
+            return 0;
+        }
 
     }
 

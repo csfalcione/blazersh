@@ -1,4 +1,3 @@
-#include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -26,6 +25,7 @@ Suite* blazersh_suite(void)
 }
 
 int main() {
+
     int number_failed;
     Suite* s;
     SRunner* sr;

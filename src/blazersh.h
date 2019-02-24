@@ -1,4 +1,4 @@
 
 #include "strarray.h"
 
-strarray* parse(char* input);
+strarray* parse_input(char* input);
