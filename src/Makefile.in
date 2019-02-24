@@ -89,7 +89,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = main$(EXEEXT)
+bin_PROGRAMS = blazersh$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -137,9 +137,9 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 PROGRAMS = $(bin_PROGRAMS)
-am_main_OBJECTS = main.$(OBJEXT)
-main_OBJECTS = $(am_main_OBJECTS)
-main_DEPENDENCIES = libblazersh.la
+am_blazersh_OBJECTS = main.$(OBJEXT)
+blazersh_OBJECTS = $(am_blazersh_OBJECTS)
+blazersh_DEPENDENCIES = libblazersh.la
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -174,8 +174,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libblazersh_la_SOURCES) $(main_SOURCES)
-DIST_SOURCES = $(libblazersh_la_SOURCES) $(main_SOURCES)
+SOURCES = $(libblazersh_la_SOURCES) $(blazersh_SOURCES)
+DIST_SOURCES = $(libblazersh_la_SOURCES) $(blazersh_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -293,7 +293,7 @@ datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
-exec_prefix = @exec_prefix@
+exec_prefix = ../
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -325,8 +325,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libblazersh.la
 libblazersh_la_SOURCES = blazersh.c blazersh.h parser.c parser.h strarray.c strarray.h
-main_SOURCES = main.c
-main_LDADD = libblazersh.la
+blazersh_SOURCES = main.c
+blazersh_LDADD = libblazersh.la
 all: all-am
 
 .SUFFIXES:
@@ -448,9 +448,9 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-main$(EXEEXT): $(main_OBJECTS) $(main_DEPENDENCIES) $(EXTRA_main_DEPENDENCIES) 
-	@rm -f main$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(main_OBJECTS) $(main_LDADD) $(LIBS)
+blazersh$(EXEEXT): $(blazersh_OBJECTS) $(blazersh_DEPENDENCIES) $(EXTRA_blazersh_DEPENDENCIES) 
+	@rm -f blazersh$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(blazersh_OBJECTS) $(blazersh_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
