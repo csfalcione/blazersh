@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <dirent.h>
 #include <string.h>
+#include <errno.h>
 
 #include "blazersh.h"
 #include "parser.h"
@@ -16,13 +17,14 @@ strarray* environment();
 char* get_variable(char* key);
 char* set_variable(char* key, char* value);
 strarray* list();
-void change_dir(char* directory);
+char* change_dir(char* directory);
 char* help();
 
 void handle_environment();
 void handle_get_variable(strarray* tokens);
 void handle_set_variable(strarray* tokens);
 void handle_list();
+void handle_pwd();
 void handle_cd();
 
 void print_prompt();
@@ -37,50 +39,42 @@ int main_loop() {
         print_prompt();
         char* input = get_input();
         strarray* tokens = parse_input(input);
+        free(input);
 
         if (strarray_len(tokens) == 0) {
             continue;
         }
-
-        if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
             return 0;
         }
-        if (strcmp( strarray_get(tokens, 0), "help" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "help" ) == 0) {
             help();
-            continue;
         }
-
-        if (strcmp( strarray_get(tokens, 0), "environ" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "environ" ) == 0) {
             handle_environment();
-            continue;
         }
-        if (strcmp( strarray_get(tokens, 0), "get" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "get" ) == 0) {
             handle_get_variable(tokens);
-            continue;
         }
-        if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
             handle_set_variable(tokens);
-            continue;
         }
-        if (strcmp( strarray_get(tokens, 0), "pwd" ) == 0) {
-            puts(current_directory());
-            continue;
+        else if (strcmp( strarray_get(tokens, 0), "pwd" ) == 0) {
+            handle_pwd();
         }
-        if (strcmp( strarray_get(tokens, 0), "list" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "list" ) == 0) {
             handle_list();
-            continue;
         }
-        if (strcmp( strarray_get(tokens, 0), "ls" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "ls" ) == 0) {
             handle_list();
-            continue;
         }
-        if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
+        else if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
             handle_cd(tokens);
-            continue;
+        } 
+        else {
+            execute(tokens);
         }
-
-        execute(tokens);
-
+        strarray_free(tokens);
     }
 
 }
@@ -90,7 +84,9 @@ void print_prompt() {
 }
 
 void handle_environment() {
-    print_strarray( environment() );
+    strarray* env = environment();
+    print_strarray( env );
+    strarray_free(env);
 }
 
 void handle_get_variable(strarray* args) {
@@ -113,13 +109,49 @@ void handle_list() {
     print_strarray( list() );
 }
 
+void handle_pwd() {
+    char* pwd = current_directory();
+    puts(pwd);
+    free(pwd);
+}
+
 void handle_cd(strarray* tokens) {
     if (strarray_len(tokens) < 2) {
         puts("Invalid arguments. Usage: cd <dir>");
         return;
     }
-    change_dir( strarray_get(tokens, 1) );
-    puts( current_directory() );
+    char* msg = change_dir( strarray_get(tokens, 1) );
+    if (msg == NULL) {
+        switch (errno) {
+            case EACCES:
+                puts("permission denied");
+                break;
+            case EINVAL:
+                puts("invalid argument");
+                break;
+            case EIO:
+                puts("I/O error");
+                break;
+            case ENAMETOOLONG:
+                puts("filename too long");
+                break;
+            case ENOENT:
+                puts("no such file or directory");
+                break;
+            case ENOTDIR:
+                puts("not a directory");
+                break;
+            case ELOOP:
+                puts("too many symbolic links encountered when resolving path");
+                break;
+            default:
+                puts("unspecified error");
+                break;
+        }
+        return;
+    }
+    puts(msg);
+    free(msg);
 }
 
 
@@ -176,14 +208,16 @@ strarray* list(){
 }
 
 
-void change_dir(char* directory) {
+char* change_dir(char* directory) {
     int result = chdir(directory);
     if (result == -1) {
-        puts("couldn't change directory");
-        return;
+        return NULL;
     }
 
-    set_variable("PWD", current_directory());
+    char* pwd = current_directory();
+    set_variable("PWD", pwd);
+
+    return pwd;
 }
 
 void print_strarray(strarray* arr) {
@@ -193,8 +227,9 @@ void print_strarray(strarray* arr) {
 }
 
 char* current_directory() {
-    char temp[1024];
-    return getcwd(temp, 1024);
+    char* temp = malloc(sizeof(char) * 1024);
+    char* res = getcwd(temp, 1024);
+    return temp;
 }
 
 
