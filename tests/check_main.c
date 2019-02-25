@@ -2,22 +2,26 @@
 
 #include "check_strarray.c"
 #include "check_parser.c"
-#include "check_blazersh.c"
 
 Suite* blazersh_suite(void)
 {
-    Suite *s;
-    TCase *tc_core;
 
-    s = suite_create("Parsing");
+    Suite* s = suite_create("Parsing");
 
-    tc_core = tcase_create("Core");
+    TCase* tc_strarray = tcase_create("String Array");
+    TCase* tc_strarray_from = tcase_create("String Array - from");
+    TCase* tc_tokenize = tcase_create("Tokenizing User Input");
+    TCase* tc_parse = tcase_create("Parsing User Input");
 
-    tcase_add_test(tc_core, test_strarray);
-    tcase_add_test(tc_core, test_strarray_from);
-    tcase_add_test(tc_core, test_tokenize); 
-    tcase_add_test(tc_core, test_parse); 
-    suite_add_tcase(s, tc_core);
+    tcase_add_test(tc_strarray, test_strarray);
+    tcase_add_test(tc_strarray_from, test_strarray_from);
+    tcase_add_test(tc_tokenize, test_tokenize); 
+    tcase_add_test(tc_parse, test_parse); 
+
+    suite_add_tcase(s, tc_strarray);
+    suite_add_tcase(s, tc_strarray_from);
+    suite_add_tcase(s, tc_tokenize);
+    suite_add_tcase(s, tc_parse);
 
     return s;
 }
@@ -34,5 +38,5 @@ int main() {
     srunner_run_all(sr, CK_NORMAL);
     number_failed = srunner_ntests_failed(sr);
     srunner_free(sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+    return (number_failed == 0) ? 0 : 1;
 }

@@ -100,8 +100,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am_check_blazersh_OBJECTS = check_blazersh-check_main.$(OBJEXT) \
-	check_blazersh-check_strarray.$(OBJEXT) \
-	check_blazersh-check_blazersh.$(OBJEXT)
+	check_blazersh-check_strarray.$(OBJEXT)
 check_blazersh_OBJECTS = $(am_check_blazersh_OBJECTS)
 check_blazersh_DEPENDENCIES = $(top_builddir)/src/libblazersh.la
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -500,8 +499,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-check_blazersh_SOURCES = check_main.c check_strarray.c check_blazersh.c \
-     $(top_builddir)/src/blazersh.h $(top_builddir)/src/strarray.h $(top_builddir)/src/parsing.h
+check_blazersh_SOURCES = check_main.c check_strarray.c \
+     $(top_builddir)/src/strarray.h $(top_builddir)/src/parsing.h
 
 check_blazersh_CFLAGS = @CHECK_CFLAGS@
 check_blazersh_LDADD = $(top_builddir)/src/libblazersh.la @CHECK_LIBS@
@@ -558,7 +557,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_blazersh-check_blazersh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_blazersh-check_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_blazersh-check_strarray.Po@am__quote@
 
@@ -610,20 +608,6 @@ check_blazersh-check_strarray.obj: check_strarray.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check_strarray.c' object='check_blazersh-check_strarray.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_blazersh_CFLAGS) $(CFLAGS) -c -o check_blazersh-check_strarray.obj `if test -f 'check_strarray.c'; then $(CYGPATH_W) 'check_strarray.c'; else $(CYGPATH_W) '$(srcdir)/check_strarray.c'; fi`
-
-check_blazersh-check_blazersh.o: check_blazersh.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_blazersh_CFLAGS) $(CFLAGS) -MT check_blazersh-check_blazersh.o -MD -MP -MF $(DEPDIR)/check_blazersh-check_blazersh.Tpo -c -o check_blazersh-check_blazersh.o `test -f 'check_blazersh.c' || echo '$(srcdir)/'`check_blazersh.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/check_blazersh-check_blazersh.Tpo $(DEPDIR)/check_blazersh-check_blazersh.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check_blazersh.c' object='check_blazersh-check_blazersh.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_blazersh_CFLAGS) $(CFLAGS) -c -o check_blazersh-check_blazersh.o `test -f 'check_blazersh.c' || echo '$(srcdir)/'`check_blazersh.c
-
-check_blazersh-check_blazersh.obj: check_blazersh.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_blazersh_CFLAGS) $(CFLAGS) -MT check_blazersh-check_blazersh.obj -MD -MP -MF $(DEPDIR)/check_blazersh-check_blazersh.Tpo -c -o check_blazersh-check_blazersh.obj `if test -f 'check_blazersh.c'; then $(CYGPATH_W) 'check_blazersh.c'; else $(CYGPATH_W) '$(srcdir)/check_blazersh.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/check_blazersh-check_blazersh.Tpo $(DEPDIR)/check_blazersh-check_blazersh.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check_blazersh.c' object='check_blazersh-check_blazersh.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_blazersh_CFLAGS) $(CFLAGS) -c -o check_blazersh-check_blazersh.obj `if test -f 'check_blazersh.c'; then $(CYGPATH_W) 'check_blazersh.c'; else $(CYGPATH_W) '$(srcdir)/check_blazersh.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
