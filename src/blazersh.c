@@ -55,8 +55,15 @@ int main_loop() {
         if (strarray_len(tokens) == 0) {
             continue;
         }
+        //these commands can't run in a subprocess and therefore don't support file redirection
         else if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
             return 0;
+        }
+        else if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
+            handle_set_variable(tokens);
+        }
+        else if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
+            handle_cd(tokens);
         }
         else {
             handle_command(tokens);
@@ -142,9 +149,6 @@ void route_command(strarray* tokens) {
     else if (strcmp( first_arg, "get" ) == 0) {
         handle_get_variable(tokens);
     }
-    else if (strcmp( first_arg, "set" ) == 0) {
-        handle_set_variable(tokens);
-    }
     else if (strcmp( first_arg, "pwd" ) == 0) {
         handle_pwd();
     }
@@ -154,9 +158,6 @@ void route_command(strarray* tokens) {
     else if (strcmp( first_arg, "ls" ) == 0) {
         handle_list();
     }
-    else if (strcmp( first_arg, "cd" ) == 0) {
-        handle_cd(tokens);
-    } 
     else {
         execute(tokens);
     }
