@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 #include "blazersh.h"
 #include "parser.h"
@@ -30,6 +31,10 @@ void handle_set_variable(strarray* tokens);
 void handle_list();
 void handle_pwd();
 void handle_cd();
+
+int setup_strategy(execution_strategy* strategy);
+int execute_strategy(execution_strategy strategy);
+int cleanup_strategy(execution_strategy* strategy);
 
 void route_command();
 void print_prompt();
@@ -65,26 +70,65 @@ void print_prompt() {
 }
 
 void handle_command(strarray* tokens) {
+    execution_strategy strategy = parse(tokens);
+    int open_res = setup_strategy(&strategy);
 
+    if (open_res == -1) {
+        puts( get_error_message(errno) );
+        return;
+    }
 
     pid_t pid = fork();
     if (pid == 0) { // child process
-        
-        route_command(tokens);
+        execute_strategy(strategy);
+        route_command(strategy.args);
         exit(errno);
     }
     else if (pid > 0) { // parent process
         int status;
         waitpid(pid, &status, 0);
+        cleanup_strategy(&strategy);
 
         if (!WIFEXITED(status)) {
             puts("child process didn't exit normally");
         }
-
     }
     else {
         puts("fork error");
     }
+}
+
+int setup_strategy(execution_strategy* strategy) {
+    if (strategy->input_file != NULL) {
+        strategy->input_fd = open(strategy->input_file, O_RDONLY);
+    }
+    if (strategy->output_file != NULL) {
+        strategy->output_fd = open(strategy->output_file, O_CREAT | O_APPEND | O_WRONLY, 0664);
+    }
+    if (strategy->input_fd == -1 || strategy->output_fd == -1) {
+        cleanup_strategy(strategy);
+        return -1;
+    }
+    return 0;
+}
+
+int execute_strategy(execution_strategy strategy) {
+    if (strategy.input_file != NULL && strategy.input_fd >= 0) {
+        dup2(strategy.input_fd, 0);
+    }
+    if (strategy.output_file != NULL && strategy.output_fd >= 0) {
+        dup2(strategy.output_fd, 1);
+    }
+}
+
+int cleanup_strategy(execution_strategy* strategy) {
+    if (strategy->input_file != NULL && strategy->input_fd >= 0) {
+        close(strategy->input_fd);
+    }
+    if (strategy->output_file != NULL && strategy->output_fd >= 0) {
+        close(strategy->output_fd);
+    }
+    return 0;
 }
 
 void route_command(strarray* tokens) {

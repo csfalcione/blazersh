@@ -37,9 +37,9 @@ execution_strategy parse(strarray* tokens) {
     execution_strategy strategy = {
         .args = strarray_create( strarray_len(tokens) ),
         .input_file = NULL,
-        .input_fd = -1,
+        .input_fd = -153, //negative and not -1
         .output_file = NULL,
-        .output_fd = -1,
+        .output_fd = -153,
     };
     enum parse_machine_state state = Argument;
     for (int i = 0; i < strarray_len(tokens); i++) {
