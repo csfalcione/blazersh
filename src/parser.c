@@ -5,33 +5,73 @@
 #include "parser.h"
 #include "strarray.h"
 
-enum parse_machine_state {Whitespace, Consuming, Escape, Quote};
-typedef struct parse_state {
-    enum parse_machine_state state;
+enum tokenize_machine_state {Whitespace, Consuming, Escape, Quote};
+typedef struct tokenize_state {
+    enum tokenize_machine_state state;
     int cursor;
     char* working_copy;
     int copy_length;
     int copy_capacity;
-} parse_state;
+} tokenize_state;
+
+enum parse_machine_state {Argument, Input, Output};
+
+execution_strategy parse(strarray* tokens);
 
 strarray* tokenize_input(char* input);
 
-parse_state emit_token(parse_state state, strarray* tokens);
-parse_state add_char(parse_state state, char c);
+tokenize_state emit_token(tokenize_state state, strarray* tokens);
+tokenize_state add_char(tokenize_state state, char c);
 
-parse_state transition(parse_state state, char* input, strarray* tokens);
-parse_state transition_whitespace(parse_state state, char* input, strarray* tokens);
-parse_state transition_consuming(parse_state state, char* input, strarray* tokens);
-parse_state transition_escape(parse_state state, char* input, strarray* tokens);
-parse_state transition_quote(parse_state state, char* input, strarray* tokens);
+tokenize_state transition(tokenize_state state, char* input, strarray* tokens);
+tokenize_state transition_whitespace(tokenize_state state, char* input, strarray* tokens);
+tokenize_state transition_consuming(tokenize_state state, char* input, strarray* tokens);
+tokenize_state transition_escape(tokenize_state state, char* input, strarray* tokens);
+tokenize_state transition_quote(tokenize_state state, char* input, strarray* tokens);
 
 int is_whitespace(char c);
 int is_word(char c);
 
 
+execution_strategy parse(strarray* tokens) {
+    execution_strategy strategy = {
+        .args = strarray_create( strarray_len(tokens) ),
+        .input_file = NULL,
+        .input_fd = -1,
+        .output_file = NULL,
+        .output_fd = -1,
+    };
+    enum parse_machine_state state = Argument;
+    for (int i = 0; i < strarray_len(tokens); i++) {
+        char* token = strarray_get(tokens, i);
+        if (strcmp(token, ">") == 0) {
+            state = Output;
+            continue;
+        }
+        if (strcmp(token, "<") == 0) {
+            state = Input;
+            continue;
+        }
+        if (state == Argument) {
+            strarray_add(strategy.args, token);
+        }
+        if (state == Input) {
+            strategy.input_file = token;
+            state = Argument;
+        }
+        if (state == Output) {
+            strategy.output_file = token;
+            state = Argument;
+        }
+    }
+
+    return strategy;
+}
+
+
 strarray* tokenize_input(char* input) {
     strarray* tokens = strarray_create_default();
-    parse_state state = {
+    tokenize_state state = {
         .state = Whitespace,
         .cursor = 0,
         .working_copy = malloc( sizeof(char) * 41 ),
@@ -52,7 +92,7 @@ strarray* tokenize_input(char* input) {
 }
 
 
-parse_state emit_token(parse_state state, strarray* tokens) {
+tokenize_state emit_token(tokenize_state state, strarray* tokens) {
     state = add_char(state, '\0');
     strarray_add(tokens, state.working_copy);
     state.copy_length = 0;
@@ -60,7 +100,7 @@ parse_state emit_token(parse_state state, strarray* tokens) {
     return state;
 }
 
-parse_state add_char(parse_state state, char c) {
+tokenize_state add_char(tokenize_state state, char c) {
     state.working_copy[state.copy_length] = c;
     state.copy_length++;
 
@@ -73,7 +113,7 @@ parse_state add_char(parse_state state, char c) {
 }
 
 
-parse_state transition(parse_state state, char* input, strarray* tokens) {
+tokenize_state transition(tokenize_state state, char* input, strarray* tokens) {
     switch (state.state) {
 
         case Whitespace:
@@ -90,9 +130,9 @@ parse_state transition(parse_state state, char* input, strarray* tokens) {
     }
 }
 
-parse_state transition_whitespace(parse_state state, char* input, strarray* tokens) {
+tokenize_state transition_whitespace(tokenize_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
-    parse_state next = state;
+    tokenize_state next = state;
     next.cursor += 1;
 
     if (is_word(c)) {
@@ -109,9 +149,9 @@ parse_state transition_whitespace(parse_state state, char* input, strarray* toke
     return next;
 }
 
-parse_state transition_consuming(parse_state state, char* input, strarray* tokens) {
+tokenize_state transition_consuming(tokenize_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
-    parse_state next = state;
+    tokenize_state next = state;
     next.cursor += 1;
 
     if (is_word(c)) {
@@ -129,9 +169,9 @@ parse_state transition_consuming(parse_state state, char* input, strarray* token
 
 }
 
-parse_state transition_escape(parse_state state, char* input, strarray* tokens) {
+tokenize_state transition_escape(tokenize_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
-    parse_state next = state;
+    tokenize_state next = state;
 
     switch (c) {
 
@@ -154,9 +194,9 @@ parse_state transition_escape(parse_state state, char* input, strarray* tokens) 
     return next;
 }
 
-parse_state transition_quote(parse_state state, char* input, strarray* tokens) {
+tokenize_state transition_quote(tokenize_state state, char* input, strarray* tokens) {
     char c = input[state.cursor];
-    parse_state next = state;
+    tokenize_state next = state;
 
     next.cursor += 1;
     if (c == '"') {

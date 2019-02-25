@@ -15,11 +15,57 @@ void assert_strarray_eq(strarray* arr1, strarray* arr2) {
     }
 }
 
-void assert_tokenization(strarray* output, char** expected, int length) {
-    assert_strarray_eq(output, strarray_from(expected, length));
+void assert_str_eq(char* a, char* b) {
+    if (a == NULL || b == NULL) {
+        ck_assert_ptr_eq(a, b);
+        return;
+    }
+    ck_assert_str_eq(a, b);
+
+}
+
+void assert_strategy(execution_strategy actual, char** e_args, int e_length, char* e_input_file, char* e_output_file) {
+    strarray* expected = strarray_from(e_args, e_length);
+    assert_strarray_eq(actual.args, expected);
+    assert_str_eq(actual.input_file, e_input_file);
+    assert_str_eq(actual.output_file, e_output_file);
 }
 
 START_TEST(test_parse)
+{
+    assert_strategy(
+        parse(tokenize_input("echo hello ")),
+        (char* []) {"echo", "hello"}, 2, NULL, NULL
+    );
+    assert_strategy(
+        parse(tokenize_input("echo hello > result.txt")),
+        (char* []) {"echo", "hello"}, 2, NULL, "result.txt"
+    );
+    assert_strategy(
+        parse(tokenize_input("grep -i < input.txt > result.txt")),
+        (char* []) {"grep", "-i"}, 2, "input.txt", "result.txt"
+    );
+    assert_strategy(
+        parse(tokenize_input("grep -i > result.txt < input.txt")),
+        (char* []) {"grep", "-i"}, 2, "input.txt", "result.txt"
+    );
+    assert_strategy(
+        parse(tokenize_input("grep -i > result.txt < input.txt")),
+        (char* []) {"grep", "-i"}, 2, "input.txt", "result.txt"
+    );
+    assert_strategy(
+        parse(tokenize_input("grep > result.txt -i < input.txt")),
+        (char* []) {"grep", "-i"}, 2, "input.txt", "result.txt"
+    );
+}
+END_TEST
+
+
+void assert_tokenization(strarray* actual, char** expected, int length) {
+    assert_strarray_eq(actual, strarray_from(expected, length));
+}
+
+START_TEST(test_tokenize)
 {
     assert_tokenization(
         tokenize_input("exit "),
@@ -42,8 +88,8 @@ START_TEST(test_parse)
         (char* []) {"cp", "-u", "My Documents", "~/doc_backup"}, 4
     );
     assert_tokenization(
-        tokenize_input("cp -u \"My Documents\" \\~/doc_backup"),
-        (char* []) {"cp", "-u", "My Documents", "~/doc_backup"}, 4
+        tokenize_input("cat  \"My Documents\" > result.txt"),
+        (char* []) {"cat", "My Documents", ">", "result.txt"}, 4
     );
     assert_tokenization(
         tokenize_input("\"cd My Documents\""),

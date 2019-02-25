@@ -15,6 +15,7 @@ Suite* blazersh_suite(void)
 
     tcase_add_test(tc_core, test_strarray);
     tcase_add_test(tc_core, test_strarray_from);
+    tcase_add_test(tc_core, test_tokenize); 
     tcase_add_test(tc_core, test_parse); 
     suite_add_tcase(s, tc_core);
 
