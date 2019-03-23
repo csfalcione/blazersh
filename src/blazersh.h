@@ -1,7 +1,8 @@
 
 #include "strarray.h"
 
-int main_loop();
+char* get_input();
+int handle_input(char* input);
 
 void execute(strarray* tokens);
 

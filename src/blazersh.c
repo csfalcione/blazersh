@@ -11,21 +11,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "blazersh.h"
 #include "tokenizer.h"
 #include "parser.h"
 #include "strarray.h"
+#include "blazersh.h"
 
-int main_loop();
-void execute(strarray* tokens);
-strarray* environment();
-char* get_variable(char* key);
-char* set_variable(char* key, char* value);
-strarray* list();
-char* change_dir(char* directory);
-char* help();
-
-void handle_command();
+void handle_command(strarray* tokens);
 void handle_environment();
 void handle_get_variable(strarray* tokens);
 void handle_set_variable(strarray* tokens);
@@ -37,44 +28,32 @@ int setup_strategy(execution_strategy* strategy);
 int execute_strategy(execution_strategy strategy);
 int cleanup_strategy(execution_strategy* strategy);
 
-void route_command();
-void print_prompt();
-char* get_input();
-void print_strarray(strarray* arr);
 char* current_directory();
+void route_command(strarray* tokens);
+void print_strarray(strarray* arr);
 const char* get_error_message(int err);
 
 
-int main_loop() {
+int handle_input(char* input) {
+    strarray* tokens = tokenize_input(input);
 
-    for(;;) {
-        print_prompt();
-        char* input = get_input();
-        strarray* tokens = tokenize_input(input);
-        free(input);
-
-        if (strarray_len(tokens) == 0) {
-            continue;
-        }
-        //these commands can't run in a subprocess and therefore don't support file redirection
-        else if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
-            return 0;
-        }
-        else if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
-            handle_set_variable(tokens);
-        }
-        else if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
-            handle_cd(tokens);
-        }
-        else {
-            handle_command(tokens);
-        }
-        strarray_free(tokens);
+    if (strarray_len(tokens) == 0) {
+        return 0;
     }
-}
-
-void print_prompt() {
-    printf("\nblazersh>"); 
+    //these commands can't run in a subprocess and therefore don't support file redirection
+    else if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
+        return -1;
+    }
+    else if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
+        handle_set_variable(tokens);
+    }
+    else if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
+        handle_cd(tokens);
+    }
+    else {
+        handle_command(tokens);
+    }
+    strarray_free(tokens);
 }
 
 void handle_command(strarray* tokens) {
@@ -304,7 +283,8 @@ ls: alias of list\n\
 pwd: prints the present working directory\n\
 cd <dir>: change the present working directory to 'dir'\n\
 help: Show this text\n\
-If you have any problems, please report them to noreply@uab.edu");
+If you have any problems, please report them to noreply@uab.edu"
+    );
 }
 
 char* get_input() {
