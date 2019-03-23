@@ -9,10 +9,11 @@ void print_prompt() {
 
 int main(int argc, char** argv) {
     for(;;) {
+        print_prompt();
         char* input = get_input();
 
         int res = handle_input(input);
-        if (res >= 0) {
+        if (res != 0) {
             return res;
         }
 

@@ -25,8 +25,9 @@ void handle_pwd();
 void handle_cd();
 
 int setup_strategy(execution_strategy* strategy);
-int execute_strategy(execution_strategy strategy);
+int execute_strategy(execution_strategy strategy, int pipe_idx);
 int cleanup_strategy(execution_strategy* strategy);
+void close_pipes_except(execution_strategy strategy, int pipe_idx);
 
 char* current_directory();
 void route_command(strarray* tokens);
@@ -42,7 +43,7 @@ int handle_input(char* input) {
     }
     //these commands can't run in a subprocess and therefore don't support file redirection
     else if (strcmp( strarray_get(tokens, 0), "exit" ) == 0) {
-        return -1;
+        exit(0);
     }
     else if (strcmp( strarray_get(tokens, 0), "set" ) == 0) {
         handle_set_variable(tokens);
@@ -54,6 +55,8 @@ int handle_input(char* input) {
         handle_command(tokens);
     }
     strarray_free(tokens);
+
+    return 0;
 }
 
 void handle_command(strarray* tokens) {
@@ -65,24 +68,37 @@ void handle_command(strarray* tokens) {
         return;
     }
 
-    pid_t pid = fork();
-    if (pid == 0) { // child process
-        execute_strategy(strategy);
-        route_command(strategy.args);
-        exit(errno);
+    pid_t pids[strategy.commands_length];
+
+    for (int cmd_idx = 0; cmd_idx < strategy.commands_length; cmd_idx++) {
+        pid_t pid = fork();
+        if (pid < 0) {
+            printf("fork error in command %d\n", cmd_idx);
+        }
+
+        if (pid == 0) { // child process
+            execute_strategy(strategy, cmd_idx);
+            route_command(strategy.commands[cmd_idx]);
+            exit(errno);
+        }
+        //parent process
+        pids[cmd_idx] = pid;
     }
-    else if (pid > 0) { // parent process
+
+    // close pipes
+    close_pipes_except(strategy, -1); // close all pipes
+
+    // wait for subprocesses
+    for (int i = 0; i < strategy.commands_length; i++) {
+        pid_t pid = pids[i];
         int status;
         waitpid(pid, &status, 0);
-        cleanup_strategy(&strategy);
 
         if (!WIFEXITED(status)) {
-            puts("child process didn't exit normally");
+            printf("process for command %d didn't exit normally\n", i);
         }
     }
-    else {
-        puts("fork error");
-    }
+    cleanup_strategy(&strategy);
 }
 
 int setup_strategy(execution_strategy* strategy) {
@@ -90,21 +106,75 @@ int setup_strategy(execution_strategy* strategy) {
         strategy->input_fd = open(strategy->input_file, O_RDONLY);
     }
     if (strategy->output_file != NULL) {
-        strategy->output_fd = open(strategy->output_file, O_CREAT | O_APPEND | O_WRONLY, 0664);
+        strategy->output_fd = open(strategy->output_file, O_CREAT | O_WRONLY, 0664);
     }
     if (strategy->input_fd == -1 || strategy->output_fd == -1) {
         cleanup_strategy(strategy);
         return -1;
     }
+
+    for (int i = 0; i < strategy->commands_length - 1; i++) {
+        int res = pipe(strategy->pipe_fds[i]);
+        if (res != 0) {
+            // close previously opened pipes
+            printf("pipe error: %d\n", res);
+            for (int j = i - 1; j >= 0; j--) {
+                int* pipefd = strategy->pipe_fds[j];
+                close(pipefd[0]);
+                close(pipefd[1]);
+            }
+            cleanup_strategy(strategy);
+            return -1;
+        }
+    }
+
     return 0;
 }
 
-int execute_strategy(execution_strategy strategy) {
-    if (strategy.input_file != NULL && strategy.input_fd >= 0) {
+int execute_strategy(execution_strategy strategy, int cmd_idx) {
+    if (cmd_idx == 0 && strategy.input_file != NULL && strategy.input_fd >= 0) {
+        //stdin from file
         dup2(strategy.input_fd, 0);
     }
-    if (strategy.output_file != NULL && strategy.output_fd >= 0) {
+
+    if (cmd_idx > 0) {
+        //stdin from pipe
+        printf("mapping stdin of command %d to pipe %d\n", cmd_idx, cmd_idx - 1);
+        int* pipefd = strategy.pipe_fds[cmd_idx - 1];
+        close(pipefd[1]);
+        close_pipes_except(strategy, cmd_idx - 1);
+        if (dup2(pipefd[0], 0) == -1) {
+            printf("dup2 error: %s", get_error_message(errno));
+        }
+    }
+
+    if (cmd_idx < strategy.commands_length - 1) {
+        //stdout to pipe
+        printf("mapping stdout of command %d to pipe %d\n", cmd_idx, cmd_idx);
+        int* pipefd = strategy.pipe_fds[cmd_idx];
+        close(pipefd[0]);
+        close_pipes_except(strategy, cmd_idx);
+        if (dup2(pipefd[1], 1) == -1) {
+            printf("dup2 error: %s", get_error_message(errno));
+        }
+    }
+
+    if (cmd_idx == strategy.commands_length - 1 && strategy.output_file != NULL && strategy.output_fd >= 0) {
+        //stdout to file
         dup2(strategy.output_fd, 1);
+    }
+}
+
+// pass anything negative for exclude_idx to close all pipes
+void close_pipes_except(execution_strategy strategy, int exclude_idx) {
+    for (int i = 0; i < strategy.commands_length - 1; i++) {
+        if (i == exclude_idx) {
+            continue;
+        }
+        // printf("closing pipe %d\n", i);
+        int* pipefd = strategy.pipe_fds[i];
+        close(pipefd[0]);
+        close(pipefd[1]);
     }
 }
 
@@ -115,6 +185,13 @@ int cleanup_strategy(execution_strategy* strategy) {
     if (strategy->output_file != NULL && strategy->output_fd >= 0) {
         close(strategy->output_fd);
     }
+
+    // for (int i = 0; i < strategy->commands_length; i++) {
+    //     strarray_free(strategy->commands[i]);
+    // }
+    // free(strategy->commands);
+    // free(strategy->pipe_fds);
+
     return 0;
 }
 
@@ -320,7 +397,9 @@ const char* get_error_message(int error) {
         case ELOOP:
             return "too many symbolic links encountered";
         case EMFILE:
-            return "maximum number of files open exceeded";
+            return "maximum number of open files for process exceeded";
+        case ENFILE:
+            return "maximum number of open files for system exceeded";
         case ENAMETOOLONG:
             return "filename too long";
         case ENOENT:
@@ -331,6 +410,10 @@ const char* get_error_message(int error) {
             return "directory not found";
         case ENOMEM:
             return "insufficient kernel memory";
+        case EFAULT:
+            return "invalid data format";
+        case EBADF:
+            return "invalid file descriptor";
         default:
             return "unspecified error";
     }
