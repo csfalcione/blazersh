@@ -12,6 +12,7 @@
 #include <fcntl.h>
 
 #include "blazersh.h"
+#include "tokenizer.h"
 #include "parser.h"
 #include "strarray.h"
 

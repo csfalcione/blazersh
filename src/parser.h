@@ -1,3 +1,4 @@
+#pragma once
 
 #include "strarray.h"
 
@@ -10,5 +11,3 @@ typedef struct execution {
 } execution_strategy;
 
 execution_strategy parse(strarray* tokens);
-
-strarray* tokenize_input(char* input);

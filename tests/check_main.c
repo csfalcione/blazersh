@@ -1,6 +1,7 @@
 #include <check.h>
 
 #include "check_strarray.c"
+#include "check_tokenizer.c"
 #include "check_parser.c"
 
 Suite* blazersh_suite(void)

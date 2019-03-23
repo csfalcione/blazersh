@@ -130,7 +130,8 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libblazersh_la_LIBADD =
-am_libblazersh_la_OBJECTS = blazersh.lo parser.lo strarray.lo
+am_libblazersh_la_OBJECTS = blazersh.lo parser.lo tokenizer.lo \
+	strarray.lo
 libblazersh_la_OBJECTS = $(am_libblazersh_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -324,7 +325,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libblazersh.la
-libblazersh_la_SOURCES = blazersh.c blazersh.h parser.c parser.h strarray.c strarray.h
+libblazersh_la_SOURCES = blazersh.c parser.c tokenizer.c strarray.c 
 blazersh_SOURCES = main.c
 blazersh_LDADD = libblazersh.la
 all: all-am
@@ -462,6 +463,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strarray.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tokenizer.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
