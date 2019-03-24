@@ -1,6 +1,6 @@
 # blazersh
 
-A shell implemented in C supporting quoting, escaping, and file redirection. 
+A shell implemented in C supporting quoting, escaping, pipes, and file redirection. 
 Part of UAB's CS-433 Operating Systems course. 
 
 Author: Caleb Falcione - calebf@uab.edu
@@ -114,4 +114,60 @@ rm: cannot remove 'test directory': Is a directory
 blazersh>rm -r test\ directory
 
 blazersh>exit
+```
+
+Here's another session as of homework 2 testing pipes
+```
+blazersh> ls | sort
+.
+..
+aclocal.m4
+ar-lib
+autom4te.cache
+compile
+config.guess
+config.h
+config.h.in
+config.h.in~
+config.log
+config.status
+config.sub
+configure
+configure.ac
+depcomp
+.git
+.gitignore
+install-sh
+libtool
+ltmain.sh
+Makefile
+Makefile.am
+Makefile.in
+missing
+README.md
+src
+stamp-h1
+test-driver
+tests
+.vscode
+
+blazersh> ls | sort | wc
+     31      31     295
+
+blazersh> ls | sort | wc -l
+31
+
+blazersh> ps -elf | grep ssh
+1 S caleb     2251  2183  0  80   0 -  2826 -      12:55 ?        00:00:00 /usr/bin/ssh-agent /usr/bin/im-launch cinnamon-session-cinnamon
+0 S caleb    19174 19131  0  80   0 -  3607 pipe_w 15:04 pts/1    00:00:00 grep ssh
+
+blazersh> ps -elf | grep ssh | wc
+      2      33     223
+
+blazersh> ps -elf | grep ssh | wc > out.txt
+
+blazersh> cat out.txt
+      2      33     223
+
+blazersh> 
 ```
