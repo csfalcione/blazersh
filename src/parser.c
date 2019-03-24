@@ -57,11 +57,12 @@ execution_strategy init_strategy (strarray* tokens) {
     int commands_length = pipe_count + 1;
 
     strarray** commands = malloc( sizeof(strarray*) * (commands_length + 1) );
+    commands[commands_length] = NULL;
     for (int i = 0; i < commands_length; i++) {
         commands[i] = strarray_create_default();
     }
 
-    int** pipe_fds = malloc( sizeof(int*) * (pipe_count + 1) );
+    int** pipe_fds = malloc( sizeof(int*) * (pipe_count) );
 
     for (int i = 0; i < pipe_count; i++) {
         pipe_fds[i] = malloc(sizeof(int) * 2);
