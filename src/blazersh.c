@@ -66,7 +66,8 @@ void handle_command(strarray* tokens) {
     int open_res = setup_strategy(&strategy);
 
     if (open_res == -1) {
-        puts( get_error_message(errno) );
+        fputs(get_error_message(errno), stderr);
+
         return;
     }
 
@@ -75,7 +76,7 @@ void handle_command(strarray* tokens) {
     for (int cmd_idx = 0; cmd_idx < strategy.commands_length; cmd_idx++) {
         pid_t pid = fork();
         if (pid < 0) {
-            printf("fork error in command %d\n", cmd_idx);
+            fprintf(stderr, "fork error in command %d\n", cmd_idx);
         }
 
         if (pid == 0) { // child process
@@ -96,7 +97,7 @@ void handle_command(strarray* tokens) {
         waitpid(pid, &status, 0);
 
         if (!WIFEXITED(status)) {
-            printf("process for command %d didn't exit normally\n", i);
+            fprintf(stderr, "process for command %d didn't exit normally\n", i);
         }
     }
     cleanup_strategy(&strategy);
@@ -119,7 +120,7 @@ int setup_strategy(execution_strategy* strategy) {
         int res = pipe(pipe_fd);
         if (res != 0) {
             // close previously opened pipes
-            printf("pipe error: %d\n", res);
+            fprintf(stderr, "pipe error: %d\n", res);
             for (int j = i - 1; j >= 0; j--) {
                 int* pipefd = strategy->pipe_fds[j];
                 close(pipefd[0]);
@@ -145,7 +146,7 @@ int execute_strategy(execution_strategy strategy, int cmd_idx) {
         close(pipefd[1]);
         close_pipes_before(strategy, cmd_idx - 1);
         if (dup2(pipefd[0], 0) == -1) {
-            printf("command %d dup2(%d, 0) error: %s", cmd_idx, pipefd[0], get_error_message(errno));
+            fprintf(stderr, "command %d dup2(%d, 0) error: %s", cmd_idx, pipefd[0], get_error_message(errno));
         }
     }
 
@@ -155,7 +156,7 @@ int execute_strategy(execution_strategy strategy, int cmd_idx) {
         close(pipefd[0]);
         close_pipes_after(strategy, cmd_idx);
         if (dup2(pipefd[1], 1) == -1) {
-            printf("command %d dup2(%d, 0) error: %s\n", cmd_idx, pipefd[0], get_error_message(errno));
+            fprintf(stderr, "command %d dup2(%d, 0) error: %s\n", cmd_idx, pipefd[0], get_error_message(errno));
         }
     }
 
@@ -238,7 +239,8 @@ void handle_environment() {
 
 void handle_get_variable(strarray* args) {
     if (strarray_len(args) < 2) {
-        puts("Invalid arguments. Usage: get <var>");
+        fputs("Invalid arguments. Usage: get <var>", stderr);
+
         return;
     }
     puts(get_variable(strarray_get(args, 1)));
@@ -246,7 +248,8 @@ void handle_get_variable(strarray* args) {
 
 void handle_set_variable(strarray* args) {
     if (strarray_len(args) < 3) {
-        puts("Invalid arguments. Usage: set <var> <val>");
+        fputs("Invalid arguments. Usage: set <var> <val>", stderr);
+
         return;
     }
     puts(set_variable( strarray_get(args, 1), strarray_get(args, 2) ));
@@ -264,7 +267,8 @@ void handle_pwd() {
 
 void handle_cd(strarray* tokens) {
     if (strarray_len(tokens) < 2) {
-        puts("Invalid arguments. Usage: cd <dir>");
+        fputs("Invalid arguments. Usage: cd <dir>", stderr);
+
         return;
     }
     char* msg = change_dir( strarray_get(tokens, 1) );
