@@ -4,7 +4,8 @@
 #include "blazersh.h"
 
 void print_prompt() {
-    printf("\nblazersh>"); 
+    // the escape sequences make the prompt bold green
+    printf("\n\033[1m\033[32m" "blazersh>" "\033[0m" " "); 
 }
 
 int main(int argc, char** argv) {
