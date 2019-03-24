@@ -16,3 +16,5 @@ int strarray_capacity(strarray* arr);
 void strarray_free(strarray* arr);
 
 char** strarray_unwrap(strarray* arr);
+
+void print_strarray(strarray* arr);

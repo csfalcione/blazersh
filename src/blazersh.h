@@ -4,7 +4,7 @@
 char* get_input();
 int handle_input(char* input);
 
-void execute(strarray* tokens);
+void execute(strarray* args);
 
 strarray* environment();
 char* get_variable(char* key);

@@ -27,6 +27,7 @@ void handle_cd();
 int setup_strategy(execution_strategy* strategy);
 int execute_strategy(execution_strategy strategy, int pipe_idx);
 int cleanup_strategy(execution_strategy* strategy);
+void wait_for_processes(pid_t* pids, int num_processes);
 void close_all_fds(execution_strategy strategy);
 void close_pipes_before(execution_strategy strategy, int pipe_idx);
 void close_pipes_after(execution_strategy strategy, int pipe_idx);
@@ -67,7 +68,7 @@ void handle_command(strarray* tokens) {
 
     if (open_res == -1) {
         fputs(get_error_message(errno), stderr);
-
+        cleanup_strategy(&strategy);
         return;
     }
 
@@ -90,16 +91,8 @@ void handle_command(strarray* tokens) {
 
     close_all_fds(strategy);
 
-    // wait for subprocesses
-    for (int i = 0; i < strategy.commands_length; i++) {
-        pid_t pid = pids[i];
-        int status;
-        waitpid(pid, &status, 0);
-
-        if (!WIFEXITED(status)) {
-            fprintf(stderr, "process for command %d didn't exit normally\n", i);
-        }
-    }
+    wait_for_processes(pids, strategy.commands_length);
+    
     cleanup_strategy(&strategy);
 }
 
@@ -111,7 +104,7 @@ int setup_strategy(execution_strategy* strategy) {
         strategy->output_fd = open(strategy->output_file, O_CREAT | O_WRONLY, 0664);
     }
     if (strategy->input_fd == -1 || strategy->output_fd == -1) {
-        cleanup_strategy(strategy);
+        close_all_fds(*strategy);
         return -1;
     }
 
@@ -119,14 +112,7 @@ int setup_strategy(execution_strategy* strategy) {
         int* pipe_fd = strategy->pipe_fds[i];
         int res = pipe(pipe_fd);
         if (res != 0) {
-            // close previously opened pipes
-            fprintf(stderr, "pipe error: %d\n", res);
-            for (int j = i - 1; j >= 0; j--) {
-                int* pipefd = strategy->pipe_fds[j];
-                close(pipefd[0]);
-                close(pipefd[1]);
-            }
-            cleanup_strategy(strategy);
+            close_pipes_before(*strategy, i);
             return -1;
         }
     }
@@ -166,6 +152,26 @@ int execute_strategy(execution_strategy strategy, int cmd_idx) {
     }
 }
 
+int cleanup_strategy(execution_strategy* strategy) {
+    int num_commands = strategy->commands_length;
+
+    //cleanup commands
+    strarray** commands = strategy->commands;
+    for (int i = 0; i < num_commands; i++) {
+        strarray_free(commands[i]);
+    }
+    free(commands);
+
+    //cleanup pipe_fds
+    int** pipe_fds = strategy->pipe_fds;
+    for (int i = 0; i < num_commands - 1; i++) {
+        free(pipe_fds[i]);
+    }
+    free(pipe_fds);
+
+    return 0;
+}
+
 void close_all_fds(execution_strategy strategy) {
     if (strategy.input_file != NULL && strategy.input_fd >= 0) {
         close(strategy.input_fd);
@@ -175,7 +181,6 @@ void close_all_fds(execution_strategy strategy) {
     }
 
     for (int i = 0; i < strategy.commands_length - 1; i++) {
-        // printf("closing pipe %d\n", i);
         int* pipefd = strategy.pipe_fds[i];
         close(pipefd[0]);
         close(pipefd[1]);
@@ -184,7 +189,6 @@ void close_all_fds(execution_strategy strategy) {
 
 void close_pipes_before(execution_strategy strategy, int pipe_idx) {
     for (int i = 0; i < pipe_idx; i++) {
-        // printf("closing pipe %d\n", i);
         int* pipefd = strategy.pipe_fds[i];
         close(pipefd[0]);
         close(pipefd[1]);
@@ -200,14 +204,20 @@ void close_pipes_after(execution_strategy strategy, int pipe_idx) {
     }
 }
 
-int cleanup_strategy(execution_strategy* strategy) {
-    
+void wait_for_processes(pid_t* pids, int num_processes) {
+    for (int i = 0; i < num_processes; i++) {
+        pid_t pid = pids[i];
+        int status;
+        waitpid(pid, &status, 0);
 
-    return 0;
+        if (!WIFEXITED(status)) {
+            fprintf(stderr, "process for command %d didn't exit normally\n", i);
+        }
+    }
 }
 
-void route_command(strarray* tokens) {
-    char* first_arg = strarray_get(tokens, 0);
+void route_command(strarray* args) {
+    char* first_arg = strarray_get(args, 0);
     if (strcmp( first_arg , "help" ) == 0) {
         help();
     }
@@ -215,7 +225,7 @@ void route_command(strarray* tokens) {
         handle_environment();
     }
     else if (strcmp( first_arg, "get" ) == 0) {
-        handle_get_variable(tokens);
+        handle_get_variable(args);
     }
     else if (strcmp( first_arg, "pwd" ) == 0) {
         handle_pwd();
@@ -227,7 +237,7 @@ void route_command(strarray* tokens) {
         handle_list();
     }
     else {
-        execute(tokens);
+        execute(args);
     }
 }
 
@@ -265,13 +275,13 @@ void handle_pwd() {
     free(pwd);
 }
 
-void handle_cd(strarray* tokens) {
-    if (strarray_len(tokens) < 2) {
+void handle_cd(strarray* args) {
+    if (strarray_len(args) < 2) {
         fputs("Invalid arguments. Usage: cd <dir>", stderr);
 
         return;
     }
-    char* msg = change_dir( strarray_get(tokens, 1) );
+    char* msg = change_dir( strarray_get(args, 1) );
     if (msg == NULL) {
         puts(get_error_message(errno));
         return;
@@ -282,8 +292,8 @@ void handle_cd(strarray* tokens) {
 
 
 
-void execute(strarray* tokens) {
-    char** raw_array = strarray_unwrap(tokens);
+void execute(strarray* args) {
+    char** raw_array = strarray_unwrap(args);
     int result = execvp(raw_array[0], &raw_array[0]);
     if (result == -1) {
         puts(get_error_message(errno));
@@ -350,12 +360,6 @@ char* change_dir(char* directory) {
     return pwd;
 }
 
-void print_strarray(strarray* arr) {
-    for(int i = 0; i < strarray_len(arr); i++) {
-        puts( strarray_get(arr, i) );
-    }
-}
-
 char* current_directory() {
     char* temp = malloc(sizeof(char) * 1024);
     char* res = getcwd(temp, 1024);
@@ -394,6 +398,12 @@ char* get_input() {
     length++;
     result[length] = '\0';
     return realloc(result, sizeof(char) * length);
+}
+
+void print_strarray(strarray* arr) {
+    for(int i = 0; i < strarray_len(arr); i++) {
+        puts( strarray_get(arr, i) );
+    }
 }
 
 const char* get_error_message(int error) {
