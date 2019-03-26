@@ -383,21 +383,9 @@ If you have any problems, please report them to noreply@uab.edu"
 }
 
 char* get_input() {
-    size_t capacity = 80;
+    size_t capacity = 4096;
     char* result = malloc(sizeof(char) * capacity);
-    int c;
-    size_t length = 0;
-    while (EOF != (c = getchar()) && c != '\r' && c != '\n') {
-        result[length] = c;
-        length++;
-        if(length == capacity - 1){
-            capacity *= 2;
-            result = realloc(result, sizeof(char) * capacity);
-        }
-    }
-    length++;
-    result[length] = '\0';
-    return realloc(result, sizeof(char) * length);
+    return fgets(result, capacity, stdin);
 }
 
 void print_strarray(strarray* arr) {
