@@ -197,7 +197,6 @@ void close_pipes_before(execution_strategy strategy, int pipe_idx) {
 
 void close_pipes_after(execution_strategy strategy, int pipe_idx) {
     for (int i = pipe_idx + 1; i < strategy.commands_length - 1; i++) {
-        // printf("closing pipe %d\n", i);
         int* pipefd = strategy.pipe_fds[i];
         close(pipefd[0]);
         close(pipefd[1]);
@@ -231,10 +230,10 @@ void route_command(strarray* args) {
         handle_pwd();
     }
     else if (strcmp( first_arg, "list" ) == 0) {
-        handle_list();
+        handle_list(args);
     }
     else if (strcmp( first_arg, "ls" ) == 0) {
-        handle_list();
+        handle_list(args);
     }
     else {
         execute(args);
@@ -265,8 +264,10 @@ void handle_set_variable(strarray* args) {
     puts(set_variable( strarray_get(args, 1), strarray_get(args, 2) ));
 }
 
-void handle_list() {
-    print_strarray( list() );
+void handle_list(strarray* args) {
+    strarray* contents = list(args);
+    print_strarray( contents );
+    strarray_free(contents);
 }
 
 void handle_pwd() {
@@ -283,7 +284,7 @@ void handle_cd(strarray* args) {
     }
     char* msg = change_dir( strarray_get(args, 1) );
     if (msg == NULL) {
-        puts(get_error_message(errno));
+        fputs(get_error_message(errno), stderr);
         return;
     }
     puts(msg);
@@ -296,7 +297,7 @@ void execute(strarray* args) {
     char** raw_array = strarray_unwrap(args);
     int result = execvp(raw_array[0], &raw_array[0]);
     if (result == -1) {
-        puts(get_error_message(errno));
+        fputs(get_error_message(errno), stderr);
     }
 }
 
@@ -327,13 +328,15 @@ char* set_variable(char* var, char* value){
 }
 
 
-strarray* list(){
+strarray* list(strarray* args){
     strarray* result = strarray_create_default();
 
-    DIR* dir = opendir(".");
+    char* dirname = strarray_len(args) > 1 ? strarray_get(args, 1) : ".";
+
+    DIR* dir = opendir(dirname);
 
     if (dir == NULL) {
-        strarray_add(result, "Current directory inaccesible.");
+        fprintf(stderr, "%s: %s\n", dirname, get_error_message(errno));
         return result;
     }
 
@@ -373,8 +376,8 @@ char* help(){
 environ: list environment variables\n\
 get <var>: show value for 'var' environment variable\n\
 set <var> <val>: set 'var' environment variable to 'val'\n\
-list: list files and subdirectories of the current directory\n\
-ls: alias of list\n\
+list [dir]: list files and subdirectories of the current directory\n\
+ls [dir]: alias of list\n\
 pwd: prints the present working directory\n\
 cd <dir>: change the present working directory to 'dir'\n\
 help: Show this text\n\
