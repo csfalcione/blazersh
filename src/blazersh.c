@@ -32,7 +32,6 @@ void close_all_fds(execution_strategy strategy);
 void close_pipes_before(execution_strategy strategy, int pipe_idx);
 void close_pipes_after(execution_strategy strategy, int pipe_idx);
 
-char* current_directory();
 void route_command(strarray* tokens);
 void print_strarray(strarray* arr);
 const char* get_error_message(int err);

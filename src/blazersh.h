@@ -11,6 +11,7 @@ char* get_variable(char* key);
 char* set_variable(char* key, char* value);
 
 strarray* list();
+char* current_directory();
 
 char* change_dir(char* directory);
 
