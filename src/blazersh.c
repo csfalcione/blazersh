@@ -17,6 +17,7 @@
 #include "blazersh.h"
 
 void handle_command(strarray* tokens);
+void handle_subcommand(single_strategy subcommand);
 void handle_environment();
 void handle_get_variable(strarray* tokens);
 void handle_set_variable(strarray* tokens);
@@ -24,13 +25,12 @@ void handle_list();
 void handle_pwd();
 void handle_cd();
 
-int setup_strategy(execution_strategy* strategy);
-int execute_strategy(execution_strategy strategy, int pipe_idx);
-int cleanup_strategy(execution_strategy* strategy);
+int setup_strategy(single_strategy* strategy);
+int execute_strategy(single_strategy strategy, int pipe_idx);
 void wait_for_processes(pid_t* pids, int num_processes);
-void close_all_fds(execution_strategy strategy);
-void close_pipes_before(execution_strategy strategy, int pipe_idx);
-void close_pipes_after(execution_strategy strategy, int pipe_idx);
+void close_all_fds(single_strategy strategy);
+void close_pipes_before(single_strategy strategy, int pipe_idx);
+void close_pipes_after(single_strategy strategy, int pipe_idx);
 
 void route_command(strarray* tokens);
 void print_strarray(strarray* arr);
@@ -62,18 +62,28 @@ int handle_input(char* input) {
 }
 
 void handle_command(strarray* tokens) {
-    execution_strategy strategy = parse(tokens);
+    multi_strategy strategy = parse(tokens);
+    for (int i = 0; i < strategy.subcommands_length; i++) {
+        single_strategy subcommand = strategy.subcommands[i];
+        handle_subcommand(subcommand);
+
+    }
+    free_strategy(strategy);
+
+}
+
+void handle_subcommand(single_strategy strategy) {
     int open_res = setup_strategy(&strategy);
 
     if (open_res == -1) {
         fputs(get_error_message(errno), stderr);
-        cleanup_strategy(&strategy);
         return;
     }
 
     pid_t pids[strategy.commands_length];
 
     for (int cmd_idx = 0; cmd_idx < strategy.commands_length; cmd_idx++) {
+        print_strarray(strategy.commands[cmd_idx]);
         pid_t pid = fork();
         if (pid < 0) {
             fprintf(stderr, "fork error in command %d\n", cmd_idx);
@@ -90,12 +100,10 @@ void handle_command(strarray* tokens) {
 
     close_all_fds(strategy);
 
-    wait_for_processes(pids, strategy.commands_length);
-    
-    cleanup_strategy(&strategy);
+    wait_for_processes(pids, strategy.commands_length);    
 }
 
-int setup_strategy(execution_strategy* strategy) {
+int setup_strategy(single_strategy* strategy) {
     if (strategy->input_file != NULL) {
         strategy->input_fd = open(strategy->input_file, O_RDONLY);
     }
@@ -119,7 +127,7 @@ int setup_strategy(execution_strategy* strategy) {
     return 0;
 }
 
-int execute_strategy(execution_strategy strategy, int cmd_idx) {
+int execute_strategy(single_strategy strategy, int cmd_idx) {
     if (cmd_idx == 0 && strategy.input_file != NULL && strategy.input_fd >= 0) {
         //stdin from file
         dup2(strategy.input_fd, 0);
@@ -151,27 +159,7 @@ int execute_strategy(execution_strategy strategy, int cmd_idx) {
     }
 }
 
-int cleanup_strategy(execution_strategy* strategy) {
-    int num_commands = strategy->commands_length;
-
-    //cleanup commands
-    strarray** commands = strategy->commands;
-    for (int i = 0; i < num_commands; i++) {
-        strarray_free(commands[i]);
-    }
-    free(commands);
-
-    //cleanup pipe_fds
-    int** pipe_fds = strategy->pipe_fds;
-    for (int i = 0; i < num_commands - 1; i++) {
-        free(pipe_fds[i]);
-    }
-    free(pipe_fds);
-
-    return 0;
-}
-
-void close_all_fds(execution_strategy strategy) {
+void close_all_fds(single_strategy strategy) {
     if (strategy.input_file != NULL && strategy.input_fd >= 0) {
         close(strategy.input_fd);
     }
@@ -186,7 +174,7 @@ void close_all_fds(execution_strategy strategy) {
     }
 }
 
-void close_pipes_before(execution_strategy strategy, int pipe_idx) {
+void close_pipes_before(single_strategy strategy, int pipe_idx) {
     for (int i = 0; i < pipe_idx; i++) {
         int* pipefd = strategy.pipe_fds[i];
         close(pipefd[0]);
@@ -194,7 +182,7 @@ void close_pipes_before(execution_strategy strategy, int pipe_idx) {
     }
 }
 
-void close_pipes_after(execution_strategy strategy, int pipe_idx) {
+void close_pipes_after(single_strategy strategy, int pipe_idx) {
     for (int i = pipe_idx + 1; i < strategy.commands_length - 1; i++) {
         int* pipefd = strategy.pipe_fds[i];
         close(pipefd[0]);

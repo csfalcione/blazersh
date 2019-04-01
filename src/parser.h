@@ -1,8 +1,10 @@
 #pragma once
 
 #include "strarray.h"
+#include <stdbool.h>
 
 typedef struct execution {
+    bool background;
     strarray** commands;
     int commands_length;
     int** pipe_fds;
@@ -10,6 +12,14 @@ typedef struct execution {
     int input_fd;
     char* output_file;
     int output_fd;
-} execution_strategy;
+} single_strategy;
 
-execution_strategy parse(strarray* tokens);
+typedef struct multi_strategy {
+    single_strategy* subcommands;
+    int subcommands_length;
+} multi_strategy;
+
+multi_strategy parse(strarray* tokens);
+single_strategy parse_single(strarray* tokens, int start_idx, int end_idx);
+
+void free_strategy(multi_strategy strategy);
