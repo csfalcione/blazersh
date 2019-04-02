@@ -1,6 +1,6 @@
 # blazersh
 
-A shell implemented in C supporting quoting, escaping, pipes, and file redirection. 
+A shell implemented in C supporting quoting, escaping, pipes, background jobs, and file redirection. 
 Part of UAB's CS-433 Operating Systems course. 
 
 Author: Caleb Falcione - calebf@uab.edu

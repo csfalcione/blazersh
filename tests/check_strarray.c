@@ -48,6 +48,7 @@ START_TEST(test_strarray_join)
     char* arr2[] = {"first"};
     
     ck_assert_str_eq(strarray_join(strarray_from(arr1, 3), " | "), "first | second | third");
+    ck_assert_str_eq(strarray_join(strarray_from(arr1, 3), ""), "firstsecondthird");
     ck_assert_str_eq(strarray_join(strarray_from(arr2, 1), " | "), "first");
 }
 END_TEST
