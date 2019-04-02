@@ -31,6 +31,9 @@ These tests can be viewed in tests/check_*.c
 There are no integration tests or unit tests that directly check stdio or error 
 handling. As a result, all of that code was lovingly written and checked by hand
 with cases like the following:
+
+![](blazersh_jobs.gif)
+
 ```
 $ ./src/blazersh 
 
