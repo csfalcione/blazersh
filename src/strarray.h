@@ -17,4 +17,4 @@ void strarray_free(strarray* arr);
 
 char** strarray_unwrap(strarray* arr);
 
-void print_strarray(strarray* arr);
+char* strarray_join(strarray* arr, char* separator);

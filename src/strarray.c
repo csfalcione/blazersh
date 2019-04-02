@@ -99,6 +99,35 @@ int strarray_capacity(strarray* arr) {
     return arr->capacity;
 }
 
+char* strarray_join(strarray* arr, char* separator) {
+    int length = 0;
+    int sep_length = strlen(separator);
+    length += (strarray_len(arr) - 1 ) * sep_length;
+
+    for (int i = 0; i < strarray_len(arr); i++) {
+        length += strlen( strarray_get(arr, i) );
+    }
+
+    char* result = malloc(sizeof(char) * (length + 1));
+    int cursor = 0;
+    for (int i = 0; i < strarray_len(arr); i++) {
+        char* offset_result = &(result[cursor]);
+        char* item = strarray_get(arr, i);
+        strcpy(offset_result, item);
+        cursor += strlen(item);
+
+        if (i < strarray_len(arr) - 1) {
+            offset_result = &(result[cursor]);
+            item = separator;
+            strcpy(offset_result, separator);
+            cursor += sep_length;
+        }
+    }
+
+    result[length] = '\0';
+    return result;
+}
+
 void strarray_free(strarray* arr) {
     free_strings(arr);
     free(arr->array);

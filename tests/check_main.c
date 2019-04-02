@@ -11,16 +11,19 @@ Suite* blazersh_suite(void)
 
     TCase* tc_strarray = tcase_create("String Array");
     TCase* tc_strarray_from = tcase_create("String Array - from");
+    TCase* tc_strarray_join = tcase_create("String Array - join");
     TCase* tc_tokenize = tcase_create("Tokenizing User Input");
     TCase* tc_parse = tcase_create("Parsing User Input");
 
     tcase_add_test(tc_strarray, test_strarray);
     tcase_add_test(tc_strarray_from, test_strarray_from);
+    tcase_add_test(tc_strarray_join, test_strarray_join);
     tcase_add_test(tc_tokenize, test_tokenize); 
     tcase_add_test(tc_parse, test_parse); 
 
     suite_add_tcase(s, tc_strarray);
     suite_add_tcase(s, tc_strarray_from);
+    suite_add_tcase(s, tc_strarray_join);
     suite_add_tcase(s, tc_tokenize);
     suite_add_tcase(s, tc_parse);
 
