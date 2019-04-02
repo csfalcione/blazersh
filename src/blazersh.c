@@ -5,25 +5,29 @@
 #include <stdint.h>
 #include <dirent.h>
 #include <string.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "strarray.h"
 #include "tokenizer.h"
 #include "parser.h"
-#include "strarray.h"
+#include "jobs.h"
 #include "blazersh.h"
 
 void handle_command(strarray* tokens);
 void handle_subcommand(single_strategy subcommand);
+void handle_subcommand_async(single_strategy subcommand);
 void handle_environment();
 void handle_get_variable(strarray* tokens);
 void handle_set_variable(strarray* tokens);
 void handle_list();
 void handle_pwd();
 void handle_cd();
+void handle_jobs();
 
 int setup_strategy(single_strategy* strategy);
 int execute_strategy(single_strategy strategy, int pipe_idx);
@@ -31,10 +35,14 @@ void wait_for_processes(pid_t* pids, int num_processes);
 void close_all_fds(single_strategy strategy);
 void close_pipes_before(single_strategy strategy, int pipe_idx);
 void close_pipes_after(single_strategy strategy, int pipe_idx);
+char* get_command_name(single_strategy command);
 
 void route_command(strarray* tokens);
 void print_strarray(strarray* arr);
 const char* get_error_message(int err);
+void update_jobs();
+
+job_node* jobs = NULL;
 
 
 int handle_input(char* input) {
@@ -53,6 +61,9 @@ int handle_input(char* input) {
     else if (strcmp( strarray_get(tokens, 0), "cd" ) == 0) {
         handle_cd(tokens);
     }
+    else if (strcmp( strarray_get(tokens, 0), "jobs" ) == 0) {
+        handle_jobs();
+    }
     else {
         handle_command(tokens);
     }
@@ -65,10 +76,31 @@ void handle_command(strarray* tokens) {
     multi_strategy strategy = parse(tokens);
     for (int i = 0; i < strategy.subcommands_length; i++) {
         single_strategy subcommand = strategy.subcommands[i];
-        handle_subcommand(subcommand);
+        if (subcommand.background) {
+            handle_subcommand_async(subcommand);
+        }
+        else {
+            handle_subcommand(subcommand);
+        }
 
     }
     free_strategy(strategy);
+
+}
+
+void handle_subcommand_async(single_strategy strategy) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        fputs("fork error in background subcommand", stderr);
+        return;
+    }
+    if (pid == 0) {
+        // child
+        handle_subcommand(strategy);
+        exit(errno);
+    }
+    // parent
+    jobs = job_add(jobs, pid, get_command_name(strategy));
 
 }
 
@@ -83,7 +115,6 @@ void handle_subcommand(single_strategy strategy) {
     pid_t pids[strategy.commands_length];
 
     for (int cmd_idx = 0; cmd_idx < strategy.commands_length; cmd_idx++) {
-        print_strarray(strategy.commands[cmd_idx]);
         pid_t pid = fork();
         if (pid < 0) {
             fprintf(stderr, "fork error in command %d\n", cmd_idx);
@@ -100,7 +131,7 @@ void handle_subcommand(single_strategy strategy) {
 
     close_all_fds(strategy);
 
-    wait_for_processes(pids, strategy.commands_length);    
+    wait_for_processes(pids, strategy.commands_length);
 }
 
 int setup_strategy(single_strategy* strategy) {
@@ -196,8 +227,9 @@ void wait_for_processes(pid_t* pids, int num_processes) {
         int status;
         waitpid(pid, &status, 0);
 
-        if (!WIFEXITED(status)) {
-            fprintf(stderr, "process for command %d didn't exit normally\n", i);
+        int exit_status;
+        if (!WIFEXITED(status) && (exit_status = WEXITSTATUS(status)) != 0) {
+            fprintf(stderr, "process for command %d didn't exit normally with status %d\n", i, exit_status);
         }
     }
 }
@@ -276,6 +308,15 @@ void handle_cd(strarray* args) {
     }
     puts(msg);
     free(msg);
+}
+
+void handle_jobs() {
+    jobs = prune_jobs(jobs);
+    job_node* cursor = jobs;
+    while (cursor != NULL) {
+        printf("%d\t%s\n", job_pid(cursor), job_name(cursor));
+        cursor = job_next(cursor);
+    }
 }
 
 
@@ -382,6 +423,21 @@ void print_strarray(strarray* arr) {
     for(int i = 0; i < strarray_len(arr); i++) {
         puts( strarray_get(arr, i) );
     }
+}
+
+char* get_command_name(single_strategy pipeline) {
+    strarray* commands = strarray_create_default();
+
+    for (int i = 0; i < pipeline.commands_length; i++) {
+        strarray* command = pipeline.commands[i];
+        char* joined = strarray_join(command, " ");
+        strarray_add(commands, joined);
+        free(joined);
+    }
+
+    char* result = strarray_join(commands, " | ");
+    strarray_free(commands);
+    return result;
 }
 
 const char* get_error_message(int error) {
